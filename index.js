@@ -29,7 +29,7 @@ const trial_list = [
     "WAT","HPE","HAL","ANET","DOV","CFG","TYL","CAG","ALB","GWW","ESS","DRI","CTXS","INCY",
     "NUE","NDAQ","NVR","EXPD","IT","DGX","IR","BR","PKI","CMS","STX","PEAK","VAR","HES",
     "ABC","CCL","NTAP","STE","CAH","DRE","MAA","EXR","CE","FMC","DPZ","BKR","GPC","IEX",
-    "MAS","MGM","LDOS","WAB","ABMD","K","HBAN","J","POOL","AVY","TDY","EMN","OMC","BF.B",
+    "MAS","MGM","LDOS","WAB","ABMD","K","HBAN","J","POOL","AVY","TDY","EMN","OMC","BF-B",
     "PFG","HRL","BIO","BXP","RJF","PHM","SJM","CINF","NLOK","FBHS","RCL","UAL","FFIV",
     "PKG","CHRW","WHR","EVRG","LUMN","JBHT","XRAY","LNT","UDR","CNP","HAS","LW","WRK",
     "LB","JKHY","TXT","L","ATO","DVN","LYV","WYNN","DISCK","AAP","HWM","ALLE","PWR",
@@ -39,12 +39,11 @@ const trial_list = [
     "DISH","REG","NCLH","KIM","BEN","FLIR","SEE","MRO","DISCA","COG","HBI","ALK","HII",
     "DXC","PVH","APA","FRT","PBCT","PRGO","VNO","LEG","RL","NOV","FLS","UNM","SLG","HFC",
     "FOX","VNT","GPS","FTI","XRX","UAA","UA","NWS"
-]
+];
 
 const scan = async (URL, filter, arr, type, key)=> {
 
     const options = {
-        executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         headless: true,
         defaultViewport: null,
         args: ['--window-size=1920,1080']
@@ -69,11 +68,7 @@ const scan = async (URL, filter, arr, type, key)=> {
            result = res[43];
         }
 
-        if(result.indexOf(',') !== -1){
-            result = parseFloat(result.split(',').join(''));
-        }else{
-            result = parseFloat(result);
-        }
+        result = parseFloat(result.split(',').join(''));
 
         if(result){
             arr.push({[key]: result});
@@ -99,6 +94,7 @@ const scanner = async ()=> {
         const filter = 'span[data-reactid="149"]';
         
         await scan(url, filter, pe_arr, 'pe', trial_list[i]);
+        console.log(`PE: ${trial_list[i]}`)
     }
 
     for(let i = 0; i < trial_list.length; i++){
@@ -106,6 +102,7 @@ const scanner = async ()=> {
         const filter = 'td';
         
         await scan(url, filter, pb_arr, 'pb', trial_list[i]);
+        console.log(`PB: ${trial_list[i]}`)
     }
 
     return {PE_ARR: pe_arr, PB_ARR: pb_arr};
@@ -150,4 +147,6 @@ const getRatios = async ()=> {
 }
 
 getRatios();
+
+
 
