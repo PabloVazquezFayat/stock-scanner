@@ -1,5 +1,4 @@
 const puppeteer = require('puppeteer');
-const fs = require('fs');
 
 const trial_list = [
     "AAPL","MSFT","AMZN","FB","TSLA","GOOGL","GOOG","BRK-B","JNJ","JPM","NVDA",
@@ -61,25 +60,63 @@ const scan = async (URL, filter, arr, type, key)=> {
 
         if(type === 'pe'){
             result = await page.$eval(filter, el => el.textContent);
+            console.log(key, 'PE:',result);
         }
 
         if(type === 'pb'){
            const res = await page.$$eval(filter, el => el.map(item => item.textContent));
            result = res[43];
+           console.log(key, result);
         }
 
-        result = parseFloat(result.split(',').join(''));
+        result = result.split(',').join('');
 
-        if(result){
-            arr.push({[key]: result});
-        }else{
-            arr.push(undefined);
+        if(result && parseFloat(result) > 0){
+            arr.push({[key]: parseFloat(result)});
+        }else if(result === 'N/A' && type === 'pe'){
+            const calculatedPE = await calculatePE(type, page);
+            arr.push({[key]: calculatedPE});
+        }else if(result === 'N/A' && type === 'pb'){
+            const calculatedPB = await calculatePB(type, page);
+            arr.push({[key]: calculatedPB});
         }
 
         await browser.close();
 
     }catch(error){
         console.log(error);
+    }
+
+}
+
+const calculatePE = async (type, page)=> {
+
+    if(type === 'pe'){
+        
+        const pricePerShare = await page.$eval('[data-reactid="50"]', el => el.textContent);
+        const earningsPerShare = await page.$eval('[data-test=EPS_RATIO-value]', el => el.textContent);
+
+        const pps = parseFloat(pricePerShare) * 100;
+        const eps = parseFloat(earningsPerShare) * 100;
+
+        return Math.ceil(pps / eps); 
+        
+    }
+
+}
+
+const calculatePB = async (type, page)=> {
+
+    if(type === 'pb'){
+        
+        const pricePerShare = await page.$eval('[data-reactid="50"]', el => el.textContent);
+        const bookValuePerShare = await page.$eval('[data-reactid="620"]', el => el.textContent); 
+
+        const pps = parseFloat(pricePerShare) * 100;
+        const bvps = parseFloat(bookValuePerShare) * 100;
+
+        return Math.ceil(pps / bvps);
+
     }
 
 }
@@ -91,10 +128,10 @@ const scanner = async ()=> {
 
     for(let i = 0; i < trial_list.length; i++){
         const url = `https://finance.yahoo.com/quote/${trial_list[i]}?p=${trial_list[i]}&.tsrc=fin-srch`;
-        const filter = 'span[data-reactid="149"]';
+        const filter = '[data-test=PE_RATIO-value]';
         
         await scan(url, filter, pe_arr, 'pe', trial_list[i]);
-        console.log(`PE: ${trial_list[i]}`)
+        //console.log(`PE: ${trial_list[i]}`)
     }
 
     for(let i = 0; i < trial_list.length; i++){
@@ -102,7 +139,7 @@ const scanner = async ()=> {
         const filter = 'td';
         
         await scan(url, filter, pb_arr, 'pb', trial_list[i]);
-        console.log(`PB: ${trial_list[i]}`)
+        //console.log(`PB: ${trial_list[i]}`)
     }
 
     return {PE_ARR: pe_arr, PB_ARR: pb_arr};
@@ -119,7 +156,7 @@ const getRatios = async ()=> {
         const pe_ar = [...pe_pb_arrs.PE_ARR];
         const pb_ar = [...pe_pb_arrs.PB_ARR];
 
-        console.log(pe_ar, pb_ar)
+        //console.log(pe_ar, pb_ar)
 
         for(let i = 0; i < pe_ar.length; i++){
 
@@ -127,9 +164,13 @@ const getRatios = async ()=> {
             const value_1 = Object.values(pe_ar[i])[0] * 100;
             const value_2 = Object.values(pb_ar[i])[0] * 100;
 
+            console.log(key, value_1, value_2);
+
             const result = ((value_1 * value_2) / 10000).toFixed(2);
+
+            //console.log(result);
             
-            if(result <= 22.5){
+            if(result <= 22.5 && result >= 0){
                 finalList.push({[key]: result});    
             }
 
