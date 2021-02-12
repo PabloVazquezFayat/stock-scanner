@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 
 const trial_list = [
-    "AAPL","MSFT","AMZN","FB","TSLA","GOOGL","GOOG","BRK.B","JNJ","JPM","NVDA",
+    "AAPL","MSFT","AMZN","FB","TSLA","GOOGL","GOOG","BRK-B","JNJ","JPM","NVDA",
     "V","DIS","PYPL","PG","UNH","HD","MA","BAC","NFLX","INTC","CMCSA","ADBE","VZ","ABT","CRM",
     "XOM","CSCO","T","WMT","PFE","TMO","PEP","KO","AVGO","MRK","ABBV","NKE","CVX","QCOM","NEE",
     "ACN","MCD","LLY","TXN","MDT","COST","DHR","HON","UNP","AMGN","WFC","BMY","LIN","PM","C",
