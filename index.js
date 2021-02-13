@@ -1,3 +1,4 @@
+const fs = require('fs');
 const puppeteer = require('puppeteer');
 
 const trial_list = [
@@ -36,9 +37,10 @@ const trial_list = [
     "HST","MOS","IRM","WU","CPB","WRB","CF","LNC","MHK","RE","TAP","PNR","GL","CMA",
     "NWSA","IPGP","PNW","NI","IVZ","JNPR","ROL","NLSN","AOS","RHI","DVA","ZION","AIZ",
     "DISH","REG","NCLH","KIM","BEN","FLIR","SEE","MRO","DISCA","COG","HBI","ALK","HII",
-    "DXC","PVH","APA","FRT","PBCT","PRGO","VNO","LEG","RL","NOV","FLS","UNM","SLG","HFC",
+    "DXC","PVH","APA","FRT","PBCT","PRGO","VNO","LEG","RL","NOV","FLS","UNM","SLG","HFC,
     "FOX","VNT","GPS","FTI","XRX","UAA","UA","NWS"
 ];
+
 
 const scan = async (URL, filter, arr, type, key)=> {
 
@@ -54,22 +56,22 @@ const scan = async (URL, filter, arr, type, key)=> {
         const page = await browser.newPage();
 
         await page.setDefaultNavigationTimeout(0);
-        await page.goto(URL);
+        await page.goto(URL, { waitUntil: 'networkidle0' });
 
         let result = '';
 
         if(type === 'pe'){
             result = await page.$eval(filter, el => el.textContent);
-            console.log(key, 'PE:',result);
         }
 
         if(type === 'pb'){
            const res = await page.$$eval(filter, el => el.map(item => item.textContent));
            result = res[43];
-           console.log(key, result);
         }
 
         result = result.split(',').join('');
+
+        console.log(key, `${type}:`, result);
 
         if(result && parseFloat(result) > 0){
             arr.push({[key]: parseFloat(result)});
@@ -131,7 +133,6 @@ const scanner = async ()=> {
         const filter = '[data-test=PE_RATIO-value]';
         
         await scan(url, filter, pe_arr, 'pe', trial_list[i]);
-        //console.log(`PE: ${trial_list[i]}`)
     }
 
     for(let i = 0; i < trial_list.length; i++){
@@ -139,7 +140,6 @@ const scanner = async ()=> {
         const filter = 'td';
         
         await scan(url, filter, pb_arr, 'pb', trial_list[i]);
-        //console.log(`PB: ${trial_list[i]}`)
     }
 
     return {PE_ARR: pe_arr, PB_ARR: pb_arr};
@@ -156,7 +156,7 @@ const getRatios = async ()=> {
         const pe_ar = [...pe_pb_arrs.PE_ARR];
         const pb_ar = [...pe_pb_arrs.PB_ARR];
 
-        //console.log(pe_ar, pb_ar)
+        console.log(pe_ar, pe_ar.length, pb_ar, pb_ar.length);
 
         for(let i = 0; i < pe_ar.length; i++){
 
@@ -167,8 +167,6 @@ const getRatios = async ()=> {
             console.log(key, value_1, value_2);
 
             const result = ((value_1 * value_2) / 10000).toFixed(2);
-
-            //console.log(result);
             
             if(result <= 22.5 && result >= 0){
                 finalList.push({[key]: result});    
@@ -187,7 +185,14 @@ const getRatios = async ()=> {
 
 }
 
-getRatios();
+const generateList = async ()=> {
+    const list = await getRatios();
+    const data = JSON.stringify({list: list});
+
+    fs.writeFileSync('list.json', data);
+}
+
+generateList();
 
 
 
