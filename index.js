@@ -42,14 +42,15 @@ const puppeteer = require('puppeteer');
 // ];
 
 const trial_list = [
-    "NUE","NDAQ","NVR","EXPD","IT","DGX","IR","BR","PKI","CMS","STX","PEAK","VAR","HES",
-    "ABC","CCL","NTAP","STE","CAH","DRE","MAA","EXR","CE","FMC","DPZ","BKR","GPC","IEX",
-    "MAS","MGM","LDOS","WAB","ABMD","K","HBAN","J","POOL","AVY","TDY","EMN","OMC","BF-B",
-    "PFG","HRL","BIO","BXP","RJF","PHM","SJM","CINF","NLOK","FBHS","RCL","UAL","FFIV",
-    "PKG","CHRW","WHR","EVRG","LUMN","JBHT","XRAY","LNT","UDR","CNP","HAS","LW","WRK",
-    "LB","JKHY","TXT","L","ATO","DVN","LYV","WYNN","DISCK","AAP","HWM","ALLE","PWR",
-    "AAL","TPR","FANG","BWA","LKQ","NRG","FOXA","SNA","IPG","UHS","HSIC","NWL","CBOE",
-    "HST","MOS","IRM","WU","CPB","WRB","CF","LNC","MHK","RE","TAP","PNR","GL","CMA"
+    "NLOK"
+    // "NUE","NDAQ","NVR","EXPD","IT","DGX","IR","BR","PKI","CMS","STX","PEAK","VAR","HES",
+    // "ABC","CCL","NTAP","STE","CAH","DRE","MAA","EXR","CE","FMC","DPZ","BKR","GPC","IEX",
+    // "MAS","MGM","LDOS","WAB","ABMD","K","HBAN","J","POOL","AVY","TDY","EMN","OMC","BF-B",
+    // "PFG","HRL","BIO","BXP","RJF","PHM","SJM","CINF","NLOK","FBHS","RCL","UAL","FFIV",
+    // "PKG","CHRW","WHR","EVRG","LUMN","JBHT","XRAY","LNT","UDR","CNP","HAS","LW","WRK",
+    // "LB","JKHY","TXT","L","ATO","DVN","LYV","WYNN","DISCK","AAP","HWM","ALLE","PWR",
+    // "AAL","TPR","FANG","BWA","LKQ","NRG","FOXA","SNA","IPG","UHS","HSIC","NWL","CBOE",
+    // "HST","MOS","IRM","WU","CPB","WRB","CF","LNC","MHK","RE","TAP","PNR","GL","CMA"
 ];
 
 const scan = async (URL, filter, arr, type, key)=> {
@@ -72,33 +73,50 @@ const scan = async (URL, filter, arr, type, key)=> {
         let debtToEquityRatio = '';
 
         if(type === 'pe'){
-            result = await page.$eval(filter, el => el.textContent);
+            const res = await page.$eval(filter, el => el.textContent);
+            result = res;
         }
 
         if(type === 'pb'){
+
+            //GET Price/Book
             const res = await page.$$eval(filter, el => el.map(item => item.textContent));
             const pbText = res.filter( el => el.indexOf('Price/Book (mrq)') !== -1)[0];
-            const digested = pbText.split('Price/Book (mrq)')[1];
+            let digested = pbText.split('Price/Book (mrq)')[1].substr(0, pbText.split('Price/Book (mrq)')[1].indexOf('.')+4);
 
             if(digested.indexOf('N/A') === -1){
-                result = pbText.substring("Price/Book (mrq)".length, pbText.indexOf('.')+3);
+                
+                if(digested.indexOf('B') !== -1){
+                    digested = convertToNumer( digested, 'B');
+                }else if(digested.indexOf('M') !== -1){
+                    digested = convertToNumer( digested, 'M');
+                }else if(digested.indexOf('k') !== -1){
+                    digested = convertToNumer( digested, 'k');
+                }else{
+                    digested = digested.slice(0, -1);
+                }
+
+                result = digested;
+
             }else{
                 result = 'N/A';
             }
 
+            //GET DEBT/EQUITY
             const dteText = res.filter( el => el.indexOf('Total Debt/Equity (mrq)') !== -1)[0];
             const dteDigested = dteText.split('Total Debt/Equity (mrq)')[1];
             
             if(dteDigested.indexOf('N/A') === -1){
-                debtToEquityRatio = dteText.substring("Total Debt/Equity (mrq)".length, dteText.indexOf('.')+3);
+                const dte = dteText.substring("Total Debt/Equity (mrq)".length, dteText.indexOf('.')+3);
+                dte.split(',').join('');
+                debtToEquityRatio = parseFloat(dte);
             }else{
                 const dte = await calculateDTE(page);
+                console.log('pickle rick', dte);
                 debtToEquityRatio = dte;
             }
             
         }
-
-        result = result.split(',').join('');
 
         console.log(key, `${type}:`, result);
 
@@ -165,11 +183,21 @@ const calculateDTE = async (page)=> {
     const bvNumber = convertToNumer(bv);
     const soNumber = convertToNumer(so);
 
-    return tdNumber * (bvNumber / soNumber);
+    console.log(tdNumber, bvNumber, soNumber);
+
+    if(!tdNumber || !bvNumber || ! soNumber){
+        return -1;
+    }
+
+    return tdNumber / (bvNumber * soNumber);
 
 }
 
 const convertToNumer = (strNum)=> {
+
+    if(strNum.indexOf(',') !== -1){
+        strNum = strNum.split(',').join('');
+    }
 
     const convert = (str, letter)=> {
         return parseFloat(str.split(letter)[0]);
@@ -179,6 +207,8 @@ const convertToNumer = (strNum)=> {
         return convert(strNum, 'B') * 1000000000;
     }else if(strNum.indexOf('M') !== -1){
         return convert(strNum, 'M') * 1000000;
+    }else if(strNum.indexOf('k') !== -1){
+        return convert(strNum, 'k') * 1000;
     }else{
         return parseFloat(strNum);
     }
@@ -191,17 +221,17 @@ const scanner = async ()=> {
     const pb_arr = [];
 
     for(let i = 0; i < trial_list.length; i++){
-        const url = `https://finance.yahoo.com/quote/${trial_list[i]}/key-statistics?p=${trial_list[i]}`;
-        const filter = 'tr';
-        
-        await scan(url, filter, pb_arr, 'pb', trial_list[i]);
-    }
-
-    for(let i = 0; i < trial_list.length; i++){
         const url = `https://finance.yahoo.com/quote/${trial_list[i]}?p=${trial_list[i]}&.tsrc=fin-srch`;
         const filter = '[data-test=PE_RATIO-value]';
         
         await scan(url, filter, pe_arr, 'pe', trial_list[i]);
+    }
+
+    for(let i = 0; i < trial_list.length; i++){
+        const url = `https://finance.yahoo.com/quote/${trial_list[i]}/key-statistics?p=${trial_list[i]}`;
+        const filter = 'tr';
+        
+        await scan(url, filter, pb_arr, 'pb', trial_list[i]);
     }
 
     return {PE_ARR: pe_arr, PB_ARR: pb_arr};
