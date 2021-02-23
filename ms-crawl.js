@@ -101,6 +101,8 @@ const getFromURL_3 = async (page)=> {
     const data = {
         shortTermDebt: parseFloat(result[29].split(',').join('')) * 1000000,
         longTermDebt: parseFloat(result[39].split(',').join('')) * 1000000,
+        totalLiability: parseFloat(result[48].split(',').join('')) * 1000000,
+        totalStockholderEquity: parseFloat(result[57].split(',').join('')) * 1000000,
         totalEquity: parseFloat(result[58].split(',').join('')) * 1000000,
     }
 
@@ -140,6 +142,8 @@ const scanner = async ()=> {
         
         const { shortTermDebt,
                 longTermDebt,
+                totalLiability,
+                totalStockholderEquity,
                 totalEquity } = await scan(url_3, getFromURL_3);
 
         const { priceBookValue } = await scan(url_4, getFromURL_4);
@@ -154,6 +158,8 @@ const scanner = async ()=> {
             bookValuePerShare,
             shortTermDebt,
             longTermDebt,
+            totalLiability,
+            totalStockholderEquity,
             totalEquity,
         }
 
@@ -182,11 +188,14 @@ const sortByMetric = async ()=> {
                 bookValuePerShare,
                 shortTermDebt,
                 longTermDebt,
+                totalLiability,
+                totalStockholderEquity,
                 totalEquity } = stock;
 
         const PE = parseFloat((pricePerShare / earningsPerShare).toFixed(2));
         const PB = priceBookValue ? priceBookValue : parseFloat((pricePerShare / bookValuePerShare).toFixed(2));
-        const DTE = debtToEquity ? debtToEquity : (shortTermDebt + longTermDebt) / totalEquity;
+        //const DTE = debtToEquity ? debtToEquity : (shortTermDebt + longTermDebt) / totalEquity;
+        const DTE = debtToEquity ? debtToEquity : totalLiability / totalStockholderEquity;
 
         console.log("PE:", PE, "PB:", PB, "DTE:", DTE);
 
