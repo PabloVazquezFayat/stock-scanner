@@ -2,7 +2,7 @@ const fs = require('fs');
 const puppeteer = require('puppeteer');
 
 const trial_list = [
-    "AAPL","MSFT","AMZN","FB","TSLA","GOOGL","GOOG","BRK-B","JNJ","JPM","NVDA",
+    "AAPL","MSFT","AMZN","FB","TSLA","GOOGL","GOOG","BRK.B","JNJ","JPM","NVDA",
     "V","DIS","PYPL","PG","UNH","HD","MA","BAC","NFLX","INTC","CMCSA","ADBE","VZ","ABT","CRM",
     "XOM","CSCO","T","WMT","PFE","TMO","PEP","KO","AVGO","MRK","ABBV","NKE","CVX","QCOM","NEE",
     "ACN","MCD","LLY","TXN","MDT","COST","DHR","HON","UNP","AMGN","WFC","BMY","LIN","PM","C",
@@ -29,7 +29,7 @@ const trial_list = [
     "WAT","HPE","HAL","ANET","DOV","CFG","TYL","CAG","ALB","GWW","ESS","DRI","CTXS","INCY",
     "NUE","NDAQ","NVR","EXPD","IT","DGX","IR","BR","PKI","CMS","STX","PEAK","VAR","HES",
     "ABC","CCL","NTAP","STE","CAH","DRE","MAA","EXR","CE","FMC","DPZ","BKR","GPC","IEX",
-    "MAS","MGM","LDOS","WAB","ABMD","K","HBAN","J","POOL","AVY","TDY","EMN","OMC","BF-B",
+    "MAS","MGM","LDOS","WAB","ABMD","K","HBAN","J","POOL","AVY","TDY","EMN","OMC","BF.B",
     "PFG","HRL","BIO","BXP","RJF","PHM","SJM","CINF","NLOK","FBHS","RCL","UAL","FFIV",
     "PKG","CHRW","WHR","EVRG","LUMN","JBHT","XRAY","LNT","UDR","CNP","HAS","LW","WRK",
     "LB","JKHY","TXT","L","ATO","DVN","LYV","WYNN","DISCK","AAP","HWM","ALLE","PWR",
